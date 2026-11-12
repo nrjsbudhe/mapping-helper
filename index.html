@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1E33">
+<title>Freezer Measure</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Measure">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{
+  --bg:#E8F0F6; --panel:#FFFFFF; --ink:#0E2238; --muted:#4A607A; --line:#9FB4C8;
+  --from:#00718A; --from-soft:#D3EEF4; --to:#9A5700; --to-soft:#FBE9CC;
+  --go:#127A3E; --go-ink:#FFFFFF; --warn:#B3261E; --key:#F6F9FC;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F1E33; --panel:#18304D; --ink:#EEF5FB; --muted:#A9BED3; --line:#3C5878;
+    --from:#56D6EE; --from-soft:#123E4F; --to:#FFBA3B; --to-soft:#4A3510;
+    --go:#3BD87F; --go-ink:#06240F; --warn:#FF7A70; --key:#21405F;
+    color-scheme: dark;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:20px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#app{max-width:640px;margin:0 auto;padding:12px 12px 120px}
+h1{font-size:28px;margin:8px 0 4px;line-height:1.15}
+h2{font-size:24px;margin:18px 0 10px}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:4px solid var(--from);outline-offset:2px}
+.big{display:block;width:100%;min-height:88px;margin:0 0 12px;padding:14px 18px;border:3px solid var(--line);
+  border-radius:16px;background:var(--panel);font-size:26px;font-weight:650;text-align:left}
+.big small{display:block;font-size:17px;font-weight:400;color:var(--muted);margin-top:2px}
+.big.primary{background:var(--go);border-color:var(--go);color:var(--go-ink)}
+.big.primary small{color:inherit;opacity:.85}
+.big.from{border-color:var(--from);background:var(--from-soft)}
+.big.to{border-color:var(--to);background:var(--to-soft)}
+.big.danger{border-color:var(--warn);color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:12px}
+.grid .big{margin:0;min-height:96px;text-align:center;font-size:28px;position:relative}
+.grid.two{grid-template-columns:1fr 1fr}
+.grid.two .big{min-height:180px;font-size:36px}
+.dot{position:absolute;top:8px;right:10px;width:14px;height:14px;border-radius:50%;background:var(--go)}
+.topbar{display:flex;gap:10px;align-items:stretch;margin-bottom:10px}
+.back{min-width:110px;min-height:72px;border:3px solid var(--line);border-radius:16px;background:var(--panel);font-size:22px;font-weight:650}
+.role{flex:1;display:flex;align-items:center;padding:0 16px;border-radius:16px;font-size:24px;font-weight:700}
+.role.from{background:var(--from-soft);color:var(--from);border:3px solid var(--from)}
+.role.to{background:var(--to-soft);color:var(--to);border:3px solid var(--to)}
+.pair{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:12px}
+.pair div{padding:10px 14px;border-radius:12px;font-size:22px;font-weight:700;word-break:break-all}
+.pair .f{background:var(--from-soft);color:var(--from)}
+.pair .t{background:var(--to-soft);color:var(--to)}
+.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.field{min-height:100px;border:3px solid var(--line);border-radius:16px;background:var(--panel);padding:6px 8px;text-align:center}
+.field b{display:block;font-size:18px;color:var(--muted);font-weight:600}
+.field span{display:block;font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.field.on{border-color:var(--ink);border-width:5px;padding:4px 6px}
+.yaws{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.yaws button{min-height:76px;border:3px solid var(--line);border-radius:14px;background:var(--panel);font-size:24px;font-weight:700}
+.yaws button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.yaws button.on{border-color:var(--ink);border-width:5px}
+.label{font-size:18px;color:var(--muted);margin:4px 2px}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.pad button{min-height:78px;border:3px solid var(--line);border-radius:14px;background:var(--key);font-size:34px;font-weight:700}
+.pad .wide{grid-column:span 2}
+.pad .fn{font-size:22px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+  background:var(--bg);border-top:2px solid var(--line)}
+.bar .inner{max-width:640px;margin:0 auto;display:flex;gap:10px}
+.bar .big{margin:0;min-height:84px;text-align:center}
+.note{padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel);margin:0 0 12px;font-size:19px}
+.note.err{border-color:var(--warn);color:var(--warn)}
+.toast{position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));max-width:616px;margin:0 auto;
+  padding:16px;border-radius:14px;background:var(--go);color:var(--go-ink);font-size:22px;font-weight:700;text-align:center;z-index:20}
+input[type=text]{width:100%;min-height:72px;font:inherit;font-size:24px;padding:10px 14px;border:3px solid var(--line);border-radius:14px;
+  background:var(--panel);color:var(--ink);margin-bottom:12px;user-select:text;-webkit-user-select:text}
+.row{display:block;width:100%;text-align:left;border:2px solid var(--line);border-radius:14px;background:var(--panel);
+  padding:12px 14px;margin-bottom:10px;min-height:80px}
+.row .ft{font-size:20px;font-weight:700;word-break:break-all}
+.row .v{font-size:18px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats{display:flex;gap:10px;margin:10px 0 16px}
+.stats div{flex:1;padding:12px;border-radius:14px;background:var(--panel);border:2px solid var(--line)}
+.stats b{display:block;font-size:30px}
+.mic{min-width:84px;border:3px solid var(--line);border-radius:14px;background:var(--panel);font-size:30px}
+.mic.live{background:var(--warn);color:#fff;border-color:var(--warn)}
+@media (prefers-reduced-motion:no-preference){.toast{animation:pop .2s ease-out}@keyframes pop{from{transform:translateY(-12px);opacity:0}}}
+.ready{display:flex;align-items:center;gap:10px;font-size:18px;color:var(--muted);margin:0 0 12px}
+.ready i{width:14px;height:14px;border-radius:50%;background:var(--go);flex:none}
+.ready.no i{background:var(--warn)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<input id="file" type="file" accept=".json,application/json" hidden>
+<script>
+"use strict";
+const TYPE = {origin:0, dock:1, pillar:2, rack:4, divider:10};
+const TYPE_NAME = {0:"Origin",1:"Dock",2:"Pillar",4:"Rack end",10:"Divider"};
+const K_CFG="wcm.cfg", K_NAME="wcm.name", K_DIRTY="wcm.dirty", K_LAST="wcm.last";
+
+let cfg=null, fileName="world_config.json", dirty=false, lastTo=null;
+let view="home", pick=null, draft=null, active=0, fresh=true, listQuery="", findQuery="", msg=null;
+let delArm=0, voice=null, offlineReady=false, swOk=false, updateReg=null;
+
+const $app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const natural=(a,b)=>a.localeCompare(b,undefined,{numeric:true});
+
+/* ---------- storage ---------- */
+function persist(){
+  try{localStorage.setItem(K_CFG,JSON.stringify(cfg));localStorage.setItem(K_NAME,fileName);
+      localStorage.setItem(K_DIRTY,dirty?"1":"");localStorage.setItem(K_LAST,lastTo?JSON.stringify(lastTo):"");}
+  catch(e){toast("Couldn't save on this phone. Export the file now to keep your work.",true)}
+}
+function restore(){
+  try{const c=localStorage.getItem(K_CFG); if(c){cfg=JSON.parse(c);fileName=localStorage.getItem(K_NAME)||fileName;
+      dirty=!!localStorage.getItem(K_DIRTY);const l=localStorage.getItem(K_LAST);lastTo=l?JSON.parse(l):null;}}
+  catch(e){cfg=null}
+}
+
+/* ---------- entities ---------- */
+function kinds(){
+  const k=[];
+  const racks=(cfg.racks||[]).map(r=>r.name).filter(Boolean).sort(natural);
+  if(racks.length) k.push({key:"rack",label:"Rack end",items:racks});
+  const docks=(cfg.docks||[]).filter(d=>d.name);
+  if(docks.length) k.push({key:"dock",label:"Dock",items:docks.map(d=>d.name),sub:Object.fromEntries(docks.map(d=>[d.name,d.description||""]))});
+  const pil=(cfg.pillars||[]).map(p=>p.name).filter(Boolean);
+  if(pil.length) k.push({key:"pillar",label:"Pillar",items:pil});
+  const div=(cfg.dividers||[]).map(p=>p.name).filter(Boolean);
+  if(div.length) k.push({key:"divider",label:"Divider",items:div});
+  k.push({key:"origin",label:"Origin",items:["origin"]});
+  return k;
+}
+function measuredSet(){
+  const s=new Set();
+  for(const m of cfg.measurements||[]){s.add(String(m.from).split("/")[0]);s.add(String(m.to).split("/")[0]);}
+  return s;
+}
+
+/* ---------- numbers ---------- */
+const fmt=n=>{if(n===undefined||n===null||isNaN(n))return"0";return String(Math.round(n*10000)/10000)};
+const yawToDeg=r=>Math.round(r*180/Math.PI*100)/100;
+function degToYaw(d){const n=Number(d);if(n===0)return 0;if(n===90)return Math.PI/2;if(n===-90)return -Math.PI/2;
+  if(n===180)return Math.PI;if(n===-180)return -Math.PI;return n*Math.PI/180}
+
+const WORDS={zero:0,oh:0,o:0,one:1,won:1,two:2,to:2,too:2,three:3,four:4,for:4,five:5,six:6,seven:7,eight:8,ate:8,nine:9,ten:10,
+  eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,
+  twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+function parseSpoken(t){
+  t=t.toLowerCase().replace(/,/g,"").replace(/metres?|meters?|m\b|degrees?/g," ").trim();
+  let neg=/^(minus|negative|-)/.test(t); t=t.replace(/^(minus|negative)\s*/,"").replace(/^-/,"");
+  const direct=t.replace(/\s+/g,"").replace(/point|dot/g,".");
+  if(/^\d*\.?\d+$/.test(direct)) return (neg?"-":"")+direct;
+  const parts=t.split(/\s*(?:point|dot|\.)\s*/);
+  const intWords=parts[0].split(/[\s-]+/).filter(Boolean);
+  let total=0,cur=0,ok=true;
+  for(const w of intWords){
+    if(/^\d+$/.test(w)){cur+=Number(w);continue}
+    if(w==="hundred"){cur=(cur||1)*100;continue}
+    if(w==="thousand"){total+=(cur||1)*1000;cur=0;continue}
+    if(w==="and")continue;
+    if(w in WORDS){cur+=WORDS[w];continue}
+    ok=false;
+  }
+  let s=String(total+cur);
+  if(parts.length>1){
+    let dec="";
+    for(const w of parts[1].split(/[\s-]+/).filter(Boolean)){
+      if(/^\d+$/.test(w))dec+=w;else if(w in WORDS&&WORDS[w]<10)dec+=WORDS[w];else if(w in WORDS)dec+=WORDS[w];else ok=false;
+    }
+    if(dec)s+="."+dec;
+  }
+  if(!ok&&!intWords.length)return null;
+  return ok?(neg?"-":"")+s:null;
+}
+function normName(t){
+  t=t.toUpperCase().replace(/\b(ZERO|ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE)\b/g,w=>({ZERO:0,ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5,SIX:6,SEVEN:7,EIGHT:8,NINE:9})[w]);
+  return t.replace(/[^A-Z0-9]/g,"");
+}
+
+/* ---------- voice ---------- */
+function startVoice(onText){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast("Voice isn't available in this browser. Use the keypad.",true);return}
+  if(voice){try{voice.abort()}catch(e){}voice=null;render();return}
+  const run=(local)=>{
+    const r=new SR(); r.lang="en-US"; r.interimResults=false; r.maxAlternatives=3;
+    if(local&&"processLocally" in r) r.processLocally=true;
+    r.onresult=e=>{const alts=[...e.results[0]].map(a=>a.transcript);voice=null;onText(alts);render()};
+    r.onerror=e=>{voice=null;
+      if(local&&(e.error==="language-not-supported"||e.error==="service-not-allowed")){run(false);return}
+      render();
+      if(e.error==="network")toast("Voice needs a connection on this phone. Use the keypad.",true);
+      else if(e.error==="not-allowed")toast("Microphone is blocked. Allow it in browser settings.",true);
+      else if(e.error!=="aborted"&&e.error!=="no-speech")toast("Voice didn't work ("+e.error+"). Use the keypad.",true);
+    };
+    r.onend=()=>{if(voice===r){voice=null;render()}};
+    voice=r; try{r.start()}catch(e){voice=null} render();
+  };
+  run(true);
+}
+
+/* ---------- toast ---------- */
+let toastTimer=0;
+function toast(t,err){msg={t,err};render();clearTimeout(toastTimer);toastTimer=setTimeout(()=>{msg=null;render()},err?4500:2200)}
+
+/* ---------- actions ---------- */
+function loadText(text,name){
+  let c; try{c=JSON.parse(text)}catch(e){toast("That file isn't valid JSON.",true);return}
+  if(typeof c!=="object"||!c||(!c.racks&&!c.docks&&!c.pillars)){toast("That doesn't look like a world_config.json.",true);return}
+  if(!Array.isArray(c.measurements))c.measurements=[];
+  cfg=c;fileName=name||"world_config.json";dirty=false;lastTo=null;persist();view="home";toast("Loaded "+fileName);
+}
+function newDraft(from){
+  draft={from:from||null,to:null,pos:["0","0","0"],yaw:0,yawRaw:null,edit:null};
+  active=0;fresh=true;
+}
+function startPick(role){pick={role,kind:null,group:null,rack:null};findQuery="";view="pick"}
+function choose(name,type){
+  const ent={name,type};
+  if(pick.role==="from"){draft.from=ent; if(!draft.to){startPick("to");render();return}}
+  else draft.to=ent;
+  const i=(cfg.measurements||[]).findIndex(m=>m.from===draft.from.name&&m.to===draft.to.name);
+  if(i>=0&&draft.edit===null){loadEdit(i);toast("Already measured. Editing it.")}
+  else{view="values";active=0;fresh=true}
+  render();
+}
+function loadEdit(i){
+  const m=cfg.measurements[i];
+  draft={from:{name:m.from,type:m.from_type},to:{name:m.to,type:m.to_type},
+    pos:(m.position||[0,0,0]).map(fmt),yaw:yawToDeg(m.yaw||0),yawRaw:m.yaw||0,edit:i};
+  active=0;fresh=true;view="values";delArm=0;
+}
+function save(){
+  const pos=draft.pos.map(v=>{const n=parseFloat(v);return isNaN(n)?0:n});
+  const rec={type:0,from:draft.from.name,to:draft.to.name,position:pos,
+    yaw:draft.yawRaw!==null?draft.yawRaw:degToYaw(draft.yaw),from_type:draft.from.type,to_type:draft.to.type};
+  if(draft.edit!==null){Object.assign(cfg.measurements[draft.edit],rec)}
+  else cfg.measurements.push(rec);
+  lastTo=draft.to;dirty=true;persist();
+  toast("Saved "+rec.from+" → "+rec.to);
+  view="saved";
+}
+function del(){
+  if(Date.now()-delArm>3000){delArm=Date.now();render();return}
+  cfg.measurements.splice(draft.edit,1);dirty=true;persist();delArm=0;view="list";toast("Measurement deleted");
+}
+function exportText(){return JSON.stringify(cfg,null,2)+"\n"}
+function download(){
+  const b=new Blob([exportText()],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fileName;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  dirty=false;persist();toast("Exported "+fileName);
+}
+async function share(){
+  try{
+    const f=new File([exportText()],fileName,{type:"application/json"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:fileName});dirty=false;persist();render()}
+    else toast("Sharing files isn't supported here. Use Export.",true);
+  }catch(e){if(e.name!=="AbortError")toast("Share didn't finish.",true)}
+}
+function key(k){
+  if(active===3){ // yaw degrees
+    let v=draft._yawStr??"";
+    if(k==="next"){active=0;fresh=true;return}
+    if(fresh){v=k==="neg"?"":"";fresh=false}
+    v=applyKey(v,k);draft._yawStr=v;const n=parseFloat(v);draft.yaw=isNaN(n)?0:n;draft.yawRaw=null;return;
+  }
+  let v=draft.pos[active];
+  if(fresh&&k==="neg"){draft.pos[active]=(v===""||v==="0")?"-":applyKey(v,"neg");fresh=false;return}
+  if(fresh&&k!=="next"){v="";fresh=false}
+  if(k==="next"){active=Math.min(active+1,2);fresh=true;return}
+  draft.pos[active]=applyKey(v,k)||"";
+}
+function applyKey(v,k){
+  if(k==="back")return v.slice(0,-1);
+  if(k==="neg")return v.startsWith("-")?v.slice(1):"-"+v;
+  if(k===".")return v.includes(".")?v:(v===""||v==="-"?v+"0.":v+".");
+  if(/^\d$/.test(k)){if(v.replace("-","").replace(".","").length>=9)return v;return v==="0"?k:v==="-0"?"-"+k:v+k}
+  return v;
+}
+
+/* ---------- views ---------- */
+function readyLine(){
+  if(!swOk)return "";
+  return offlineReady?`<div class="ready"><i></i>Ready to work offline</div>`
+    :`<div class="ready no"><i></i>Getting ready for offline use. Stay on Wi-Fi a moment.</div>`;
+}
+function updateBanner(){
+  return updateReg?`<button class="big from" data-act="update">Update available<small>Tap to load the new version. Your work is kept.</small></button>`:"";
+}
+function topbar(label,role){
+  return `<div class="topbar"><button class="back" data-act="back" aria-label="Back">‹ Back</button>
+    <div class="role ${role||""}">${esc(label)}</div></div>`;
+}
+function vHome(){
+  if(!cfg) return `<h1>Freezer measure</h1>
+    <p class="muted">Record rack, dock and pillar measurements into world_config.json. Works without internet.</p>
+    ${updateBanner()}${readyLine()}<h2>Start</h2>
+    <button class="big primary" data-act="open">Load world_config.json<small>Pick the file from this phone</small></button>`;
+  const n=cfg.measurements.length;
+  return `${updateBanner()}${readyLine()}<h1>${esc(fileName)}</h1>
+    <div class="stats"><div><b>${n}</b>measurements</div><div><b>${(cfg.racks||[]).length}</b>racks</div></div>
+    ${dirty?`<div class="note">You have changes that aren't exported yet.</div>`:""}
+    ${lastTo?`<button class="big from" data-act="chain">Continue from ${esc(lastTo.name)}<small>Next measurement starts where the last one ended</small></button>`:""}
+    <button class="big primary" data-act="new">New measurement<small>Pick from and to</small></button>
+    <button class="big" data-act="list">Edit measurements<small>${n} saved</small></button>
+    <button class="big" data-act="export">Export updated file<small>Saves ${esc(fileName)} to Downloads</small></button>
+    ${navigator.canShare?`<button class="big" data-act="share">Share updated file<small>Send to Slack, email, Drive</small></button>`:""}
+    <button class="big" data-act="open">Load a different file</button>`;
+}
+function vPick(){
+  const role=pick.role, roleLabel=role==="from"?"From":"To";
+  const ks=kinds();
+  const head=topbar(pick.rack?`${roleLabel}: ${pick.rack}`:roleLabel,role);
+  const other=role==="to"&&draft.from?`<div class="pair"><div class="f">From ${esc(draft.from.name)}</div></div>`:"";
+  if(!pick.kind){
+    return head+other+`<div class="grid">${ks.map(k=>`<button class="big ${role}" data-act="kind" data-v="${k.key}">${esc(k.label)}</button>`).join("")}</div>`;
+  }
+  const k=ks.find(x=>x.key===pick.kind);
+  if(pick.kind!=="rack"){
+    return head+other+k.items.map(n=>`<button class="big ${role}" data-act="ent" data-v="${esc(n)}" data-t="${TYPE[k.key]}">${esc(n)}${k.sub&&k.sub[n]?`<small>${esc(k.sub[n])}</small>`:""}</button>`).join("");
+  }
+  if(pick.rack){
+    return head+other+`<div class="grid two">
+      <button class="big ${role}" data-act="side" data-v="left">Left</button>
+      <button class="big ${role}" data-act="side" data-v="right">Right</button></div>`;
+  }
+  const done=measuredSet();
+  const tile=n=>`<button class="big ${role}" data-act="rack" data-v="${esc(n)}">${done.has(n)?'<i class="dot" title="Has measurements"></i>':""}${esc(n)}</button>`;
+  const find=`<input type="text" id="find" placeholder="Find rack, e.g. DB even 4" value="${esc(findQuery)}" autocomplete="off" autocapitalize="characters">`;
+  if(findQuery){
+    const q=normName(findQuery);
+    const hits=k.items.filter(n=>normName(n).includes(q));
+    return head+other+find+(hits.length?`<div class="grid">${hits.slice(0,40).map(tile).join("")}</div>`:`<div class="note">No rack matches “${esc(findQuery)}”.</div>`);
+  }
+  if(!pick.group){
+    const groups=[...new Set(k.items.map(n=>n.slice(0,2)))].sort(natural);
+    return head+other+find+`<div class="grid">${groups.map(g=>`<button class="big ${role}" data-act="group" data-v="${esc(g)}">${esc(g)}<small>${k.items.filter(n=>n.startsWith(g)).length} racks</small></button>`).join("")}</div>`;
+  }
+  return head+other+`<div class="grid">${k.items.filter(n=>n.startsWith(pick.group)).map(tile).join("")}</div>`;
+}
+function vValues(){
+  const names=["X","Y","Z"];
+  const yawSel=draft.yawRaw!==null?yawToDeg(draft.yawRaw):draft.yaw;
+  const presets=[0,90,180,-90];
+  const same=(a,b)=>{let d=((a-b)%360+540)%360-180;return Math.abs(d)<0.01};
+  const selP=presets.find(p=>same(p,yawSel));
+  const isPreset=selP!==undefined;
+  return topbar(draft.edit!==null?"Edit measurement":"Enter offset")+
+    `<div class="pair"><button class="row" data-act="re" data-v="from" style="border-color:var(--from);background:var(--from-soft);min-height:64px"><span class="ft" style="color:var(--from)">From ${esc(draft.from.name)}</span></button>
+     <button class="row" data-act="re" data-v="to" style="border-color:var(--to);background:var(--to-soft);min-height:64px"><span class="ft" style="color:var(--to)">To ${esc(draft.to.name)}</span></button></div>
+    <div class="fields">${names.map((n,i)=>`<button class="field ${active===i?"on":""}" data-act="field" data-v="${i}"><b>${n} (m)</b><span>${esc(draft.pos[i]||"0")}</span></button>`).join("")}</div>
+    <div class="label">Rotation (yaw)</div>
+    <div class="yaws">${presets.map(p=>`<button class="${selP===p&&active!==3?"sel":""}" data-act="yaw" data-v="${p}">${p}°</button>`).join("")}
+      <button class="${active===3?"on":""} ${!isPreset?"sel":""}" data-act="field" data-v="3">${!isPreset?esc(yawSel)+"°":"Other"}</button></div>
+    <div class="pad">
+      ${["7","8","9"].map(d=>`<button data-act="key" data-v="${d}">${d}</button>`).join("")}<button class="fn" data-act="key" data-v="back" aria-label="Delete">⌫</button>
+      ${["4","5","6"].map(d=>`<button data-act="key" data-v="${d}">${d}</button>`).join("")}<button data-act="key" data-v="neg" aria-label="Plus or minus">±</button>
+      ${["1","2","3"].map(d=>`<button data-act="key" data-v="${d}">${d}</button>`).join("")}<button data-act="key" data-v=".">.</button>
+      <button data-act="key" data-v="0">0</button>
+      <button class="mic ${voice?"live":""}" data-act="mic" aria-label="Say the value">${voice?"■":"🎤"}</button>
+      <button class="fn wide" data-act="key" data-v="next">Next field</button>
+    </div>
+    ${draft.edit!==null?`<button class="big danger" data-act="del">${Date.now()-delArm<3000?"Tap again to delete":"Delete measurement"}</button>`:""}
+    <div class="bar"><div class="inner"><button class="big primary" data-act="save">Save measurement</button></div></div>`;
+}
+function vSaved(){
+  return `<h1>Saved</h1><div class="pair"><div class="f">${esc(lastTo&&draft.from?draft.from.name:"")}</div><div class="t">${esc(lastTo?lastTo.name:"")}</div></div>
+    <button class="big from" data-act="chain">Next from ${esc(lastTo.name)}<small>Continue the chain</small></button>
+    <button class="big primary" data-act="new">New measurement</button>
+    <button class="big" data-act="home">Done</button>`;
+}
+function vList(){
+  const ms=(cfg.measurements||[]).map((m,i)=>({m,i}));
+  const q=normName(listQuery);
+  const rows=q?ms.filter(({m})=>normName(m.from+" "+m.to).includes(q)):ms;
+  return topbar("Measurements")+
+    `<input type="text" id="lq" placeholder="Filter by name" value="${esc(listQuery)}" autocomplete="off">`+
+    (rows.length?rows.slice().reverse().map(({m,i})=>{const p=m.position||[0,0,0];
+      return `<button class="row" data-act="edit" data-v="${i}"><div class="ft">${esc(m.from)} → ${esc(m.to)}</div>
+      <div class="v">x ${fmt(p[0])}  y ${fmt(p[1])}  z ${fmt(p[2])}  yaw ${yawToDeg(m.yaw||0)}°</div></button>`}).join("")
+     :`<div class="note">${q?"Nothing matches that filter.":"No measurements yet. Go back and add one."}</div>`);
+}
+function render(){
+  const focusId=document.activeElement&&document.activeElement.id;
+  let h={home:vHome,pick:vPick,values:vValues,saved:vSaved,list:vList}[view]();
+  if(msg)h+=`<div class="toast" role="status" style="${msg.err?"background:var(--warn);color:#fff":""}">${esc(msg.t)}</div>`;
+  $app.innerHTML=h;
+  if(focusId){const el=document.getElementById(focusId);if(el){el.focus();const L=el.value.length;try{el.setSelectionRange(L,L)}catch(e){}}}
+}
+
+/* ---------- events ---------- */
+$app.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;
+  const a=b.dataset.act,v=b.dataset.v;
+  if(navigator.vibrate)try{navigator.vibrate(15)}catch(_){}
+  switch(a){
+    case "open": if(dirty&&cfg&&!confirm("Changes aren't exported. Load another file anyway?"))return;
+      document.getElementById("file").click();return;
+    case "new": newDraft(null);startPick("from");break;
+    case "chain": newDraft(lastTo);startPick("to");break;
+    case "list": view="list";listQuery="";break;
+    case "home": view="home";break;
+    case "export": download();return;
+    case "share": share();return;
+    case "back":
+      if(voice){try{voice.abort()}catch(_){}voice=null}
+      if(view==="pick"){
+        if(findQuery){findQuery="";}
+        else if(pick.rack)pick.rack=null;
+        else if(pick.group)pick.group=null;
+        else if(pick.kind)pick.kind=null;
+        else if(pick.role==="to"&&draft.from&&draft.edit===null&&!draft.chained){draft.to=null;startPick("from")}
+        else view=draft&&draft.from&&draft.to?"values":"home";
+      } else if(view==="values")view=draft.edit!==null?"list":"home";
+      else view="home";
+      break;
+    case "kind": pick.kind=v; if(v==="origin"){choose("origin",0);return} break;
+    case "group": pick.group=v;break;
+    case "rack": pick.rack=v;break;
+    case "side": choose(pick.rack+"/"+v,TYPE.rack);return;
+    case "ent": choose(v,Number(b.dataset.t));return;
+    case "re": startPick(v);break;
+    case "field": active=Number(v);fresh=true;if(active===3)draft._yawStr="";break;
+    case "yaw": if(!(draft.yawRaw!==null&&Math.abs(yawToDeg(draft.yawRaw)-Number(v))<0.01)){draft.yaw=Number(v);draft.yawRaw=null;}if(active===3)active=0;break;
+    case "key": key(v);break;
+    case "mic": startVoice(alts=>{
+        let val=null;for(const t of alts){val=parseSpoken(t);if(val!==null)break}
+        if(val===null){toast("Heard “"+alts[0]+"”. Try again or use the keypad.",true);return}
+        if(active===3){draft.yaw=parseFloat(val);draft.yawRaw=null;draft._yawStr=val}
+        else{draft.pos[active]=val;active=Math.min(active+1,2)}
+        fresh=true;
+      });return;
+    case "save": save();break;
+    case "del": del();return;
+    case "edit": loadEdit(Number(v));break;
+    case "update": if(updateReg&&updateReg.waiting){updateReg.waiting.postMessage("skipWaiting")}return;
+  }
+  render();
+});
+$app.addEventListener("input",e=>{
+  if(e.target.id==="find"){findQuery=e.target.value;render()}
+  if(e.target.id==="lq"){listQuery=e.target.value;render()}
+});
+document.getElementById("file").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>loadText(r.result,f.name);r.onerror=()=>toast("Couldn't read that file.",true);r.readAsText(f);
+  e.target.value="";
+});
+window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
+
+/* chained drafts keep their "from" on back */
+const _newDraft=newDraft;newDraft=function(from){_newDraft(from);if(from)draft.chained=true};
+
+restore();render();
+
+/* ---------- offline install (PWA) ---------- */
+if("serviceWorker" in navigator && location.protocol!=="file:"){
+  swOk=true;
+  let reloading=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(updateReg&&!reloading){reloading=true;location.reload()}});
+  navigator.serviceWorker.register("./sw.js").then(reg=>{
+    const flag=()=>{if(reg.waiting&&navigator.serviceWorker.controller){updateReg=reg;render()}};
+    flag();
+    reg.addEventListener("updatefound",()=>{const w=reg.installing;w&&w.addEventListener("statechange",()=>{if(w.state==="installed")flag()})});
+    navigator.serviceWorker.ready.then(()=>{offlineReady=true;render()});
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reg.update().catch(()=>{})});
+  }).catch(()=>{swOk=false;render()});
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+}
+</script>
+</body>
+</html>
